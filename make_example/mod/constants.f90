@@ -1,0 +1,12 @@
+module constants
+  implicit none
+  save
+  integer, PARAMETER :: DBLP = 8
+  real(DBLP), PARAMETER :: PI = 3.14159265358979323846D0
+  real(DBLP), PARAMETER :: DEG2RAD = 0.0174532925199432957692D0
+  real(DBLP), PARAMETER :: RAD2DEG = 57.2957795131D0
+  real(DBLP), PARAMETER :: ZERO = 0.0D0
+  real(DBLP), PARAMETER :: ONE2  = 0.5D0
+  real(DBLP), PARAMETER :: ONE8  = 0.125D0
+  real(DBLP), PARAMETER :: ONE16 = 0.0625D0
+end module constants
