@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 
 # define a function to plot a grid given a set of arrays
