@@ -26,6 +26,14 @@ Jmax = 51
 tolerance = 1e-6
 max_iter = 1e6
 
+# variable conductivity cases
+# 0: no clustering
+# 1: linear function of eta, minimized at the top and maximized at the bottom
+# 2: cosine wave over eta
+# 3: sine wave over eta, maximized in the center
+# 4: gaussian function in eta centered at eta=0.5 with sigma=0.1
+CASE = 0
+
 # Step 2: construct algebraic grid #############################################
 
 # define mapping from (i,j) to (xi,eta) as equal spacings
@@ -39,7 +47,7 @@ y = yL(x) + eta*(yU(x) - yL(x))
 
 # plot the x,y grid using the algebraic mapping
 # plot_grid(xi, eta)
-plot_grid(x, y, name='algebraic_grid')
+# plot_grid(x, y, name='algebraic_grid')
 
 # Step 3: solve laplacian using Gauss-Seidel ###################################
 
@@ -59,6 +67,9 @@ error = np.inf
 alpha = np.zeros_like(x)
 beta = np.zeros_like(x)
 gamma = np.zeros_like(x)
+
+# x = np.pad(x, pad_width=1, mode='edge')
+# y = np.pad(y, pad_width=1, mode='edge')
 x_old = x.copy()
 y_old = y.copy()
 
@@ -89,12 +100,41 @@ while (error > tolerance):
             a7 = (gamma[i,j])/(d_eta)**2 * a0
             a8 = (-1*beta[i,j])/(2*d_xi*d_eta) * a0
 
+            # calculate varible conductivity k at the current point (i,j) based on the case
+            if CASE == 0:
+                k = np.ones_like(x)
+            elif CASE == 1:
+                k = 3 + eta**2
+            elif CASE == 2:
+                k = 0.5*np.cos(np.pi*eta) + 4
+            elif CASE == 3:
+                k = 1.0*np.sin(np.pi*eta) + 4
+            elif CASE == 4:
+                k = 0.5*np.exp(-((eta-0.5)**2)/(2*0.1**2)) + 1
+
+            jacobian = 1/(4*d_xi*d_eta) * \
+                ( (x_old[i,j+1] - x[i,j-1])*(y_old[i+1,j] - y[i-1,j]) \
+                - (x_old[i+1,j] - x[i-1,j])*(y_old[i,j+1] - y[i,j-1]) )
+            
+            rhs_x = jacobian/(4*d_xi*d_eta*k[i,j]) * \
+                ( (k[i,j+1] - k[i,j-1])*(y_old[i+1,j] - y[i-1,j]) \
+                - (k[i+1,j] - k[i-1,j])*(y_old[i,j+1] - y[i,j-1]) )
+            
+            rhs_y = -1*jacobian/(4*d_xi*d_eta*k[i,j]) * \
+                ( (k[i,j+1] - k[i,j-1])*(x_old[i+1,j] - x[i-1,j]) \
+                - (k[i+1,j] - k[i-1,j])*(x_old[i,j+1] - x[i,j-1]) )
+
+            variable_x = -1*rhs_x * a0
+            variable_y = -1*rhs_y * a0
+
             # update x and y at the current point (i,j) using the Gauss-Seidel formula
             x[i,j] = a1*x[i-1,j-1] + a2*x[i-1,j] + a3*x[i-1,j+1] + a4*x[i,j-1] + \
-                     a5*x_old[i,j+1] + a6*x_old[i+1,j-1] + a7*x_old[i+1,j] + a8*x_old[i+1,j+1]
+                     a5*x_old[i,j+1] + a6*x_old[i+1,j-1] + a7*x_old[i+1,j] + a8*x_old[i+1,j+1] + \
+                     variable_x
             
             y[i,j] = a1*y[i-1,j-1] + a2*y[i-1,j] + a3*y[i-1,j+1] + a4*y[i,j-1] + \
-                     a5*y_old[i,j+1] + a6*y_old[i+1,j-1] + a7*y_old[i+1,j] + a8*y_old[i+1,j+1]
+                     a5*y_old[i,j+1] + a6*y_old[i+1,j-1] + a7*y_old[i+1,j] + a8*y_old[i+1,j+1] + \
+                     variable_y
     
     # calculate the error as the maximum change in x and y from the previous iteration
     error_x = np.max(np.abs(x - x_old))
@@ -106,6 +146,9 @@ while (error > tolerance):
     y_old = y.copy()
     iteration += 1
     print(f'iteration: {iteration}, error: {error}')
+
+# x = x[1:-1, 1:-1]
+# y = y[1:-1, 1:-1]
 
 # plot laplacian optimized grid
 plot_grid(x,y, name='laplacian_grid', interactive=True)

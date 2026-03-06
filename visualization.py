@@ -6,8 +6,8 @@ def plot_grid(xplot, yplot, name='grid', interactive=False):
     plt.figure()
     plt.plot(xplot, yplot, 'k-')
     plt.plot(np.transpose(xplot), np.transpose(yplot), 'k-')
-    plt.xlim(-0.5, 5.5)
-    plt.ylim(-0.5, 3.5)
+    # plt.xlim(-0.5, 5.5)
+    # plt.ylim(-1, 2)
     plt.savefig(f'{name}.png')
     if interactive:
         plt.show()
